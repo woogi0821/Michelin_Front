@@ -2,9 +2,10 @@ import api from './api'
 
 // 맛집 목록 조회 (필터 + 페이지네이션)
 export const getRestaurantList = (params?: {
-  category?: string
-  region?: string
   grade?: string
+  city?: string
+  district?: string
+  isGreenStar?: string
   keyword?: string
   page?: number
   size?: number
@@ -35,4 +36,9 @@ export const deleteRestaurant = (id: number) => {
 // 검색 자동완성
 export const getSearchAutocomplete = (keyword: string) => {
   return api.get('/restaurants/autocomplete', { params: { keyword } })
+}
+
+// 지도 마커 조회 (P4 연동)
+export const getRestaurantMarkers = (lat: number, lng: number) => {
+  return api.get('/restaurants/markers', { params: { lat, lng } })
 }
