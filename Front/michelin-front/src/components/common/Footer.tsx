@@ -32,8 +32,11 @@ function Footer() {
           THE <span style={{ color: '#e62117' }}>PLATE</span>
         </div>
 
-        {/* 설명 + 링크 */}
-        <div className="flex justify-between items-end">
+        {/* 설명 + 링크
+            모바일  : 세로 스택 (설명 위 / 링크 아래)
+            md 이상 : 가로 배치 (설명 좌 / 링크 우)
+        */}
+        <div className="flex flex-col gap-5 md:flex-row md:justify-between md:items-end">
           <p
             style={{
               fontSize: '0.65rem',
@@ -75,9 +78,12 @@ function Footer() {
         </div>
       </div>
 
-      {/* 하단 */}
+      {/* 하단
+          모바일  : 세로 스택 (카피라이트 위 / BUSAN 아래)
+          md 이상 : 가로 양쪽 정렬
+      */}
       <div
-        className="flex justify-between items-center px-[5vw] py-[20px]"
+        className="flex flex-col gap-2 md:flex-row md:justify-between md:items-center px-[5vw] py-[20px]"
         style={{ background: '#f5f5f5' }}
       >
         <span
