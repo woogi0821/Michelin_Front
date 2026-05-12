@@ -76,7 +76,7 @@ const RestaurantMapContainer: React.FC<RestaurantMapProps> = ({
     };
   }, []);
 
-// [기능 2] 맛집 마커들 그리기
+// 맛집 마커들 그리기
 useEffect(() => {
   if (!isMapLoaded || !mapInstance.current) return;
   const map = mapInstance.current;
@@ -104,7 +104,24 @@ useEffect(() => {
   });
 }, [restaurants, isMapLoaded, selectedId]);
 
-  // [기능 3] 내 위치로 지도만 이동
+// [추가] 지도의 중심 이동만 전담하는 새로운 로직
+useEffect(() => {
+  if (!isMapLoaded || !mapInstance.current || !center) return;
+
+  const map = mapInstance.current;
+  const currentCenter = map.getCenter();
+  
+  // 현재 지도의 실제 중심과 부모가 준 좌표(center)가 다를 때만 이동
+  const diffLat = Math.abs(currentCenter.getLat() - center.lat);
+  const diffLng = Math.abs(currentCenter.getLng() - center.lng);
+
+  // 차이가 0.0001보다 클 때(즉, 리스트에서 식당을 클릭했을 때 등)만 이동
+  if (diffLat > 0.0001 || diffLng > 0.0001) {
+    map.panTo(new window.kakao.maps.LatLng(center.lat, center.lng));
+  }
+}, [center, isMapLoaded]);
+
+  // 내 위치로 지도만 이동
 useEffect(() => {
   if (!isMapLoaded || !mapInstance.current || !userLocation) return;
 
