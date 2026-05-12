@@ -6,11 +6,13 @@ import RestaurantManagePage from '../pages/restaurant/RestaurantManagePage'
 import NotFoundPage from '../pages/NotFoundPage'
 import Navbar from '../components/common/Navbar'
 import Footer from '../components/common/Footer'
+import AuthModal from '../components/common/AuthModal'
 
 function AppRouter() {
   return (
     <BrowserRouter>
       <Navbar />
+      <AuthModal />
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/restaurants" element={<RestaurantListPage />} />

@@ -13,7 +13,7 @@ interface AutocompleteItem {
 function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { loggedIn, logout, introUnlocked } = useAuthStore()
+  const { loggedIn, logout, introUnlocked, setActiveModal } = useAuthStore()
   const [keyword, setKeyword] = useState('')
   const [results, setResults] = useState<AutocompleteItem[]>([])
   const [focused, setFocused] = useState(false)
@@ -65,7 +65,6 @@ function Navbar() {
     })
   }
 
-  // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -76,7 +75,6 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // ⌘K 단축키
   useEffect(() => {
     const handleShortcut = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -89,20 +87,17 @@ function Navbar() {
     return () => document.removeEventListener('keydown', handleShortcut)
   }, [])
 
-  // 페이지 이동 시 전부 닫기
   useEffect(() => {
     setMobileMenuOpen(false)
     setMobileSearchOpen(false)
   }, [location.pathname])
 
-  // 스크롤 시 메뉴 닫기
   useEffect(() => {
     const handleScroll = () => { if (mobileMenuOpen) setMobileMenuOpen(false) }
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [mobileMenuOpen])
 
-  // ✅ 모든 hooks 아래로 이동 — Rules of Hooks 준수
   const isIntro = location.pathname === '/' && !introUnlocked
   if (isIntro) return null
 
@@ -110,7 +105,6 @@ function Navbar() {
     <>
       <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: '#fdfdfd', borderBottom: '1px solid #ddd' }}>
 
-        {/* 메인 바 */}
         <div className="relative flex items-center justify-between px-[5vw]" style={{ height: '56px' }}>
 
           {/* 로고 */}
@@ -184,8 +178,25 @@ function Navbar() {
                 </>
               ) : (
                 <>
-                  <span onClick={() => navigate('/login')} className="cursor-pointer" style={{ color: '#111' }} onMouseEnter={e => e.currentTarget.style.color = '#e62117'} onMouseLeave={e => e.currentTarget.style.color = '#111'}>LOGIN</span>
-                  <button onClick={() => navigate('/register')} style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.6rem', letterSpacing: '2px', border: '1px solid #111', background: '#111', padding: '5px 14px', cursor: 'pointer', color: '#fff', transition: 'all 0.3s' }} onMouseEnter={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#111' }} onMouseLeave={e => { e.currentTarget.style.background = '#111'; e.currentTarget.style.color = '#fff' }}>JOIN</button>
+                  {/* LOGIN → 모달 오픈 */}
+                  <span
+                    onClick={() => setActiveModal('LOGIN')}
+                    className="cursor-pointer"
+                    style={{ color: '#111' }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#e62117'}
+                    onMouseLeave={e => e.currentTarget.style.color = '#111'}
+                  >
+                    LOGIN
+                  </span>
+                  {/* JOIN → 모달 오픈 */}
+                  <button
+                    onClick={() => setActiveModal('JOIN')}
+                    style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.6rem', letterSpacing: '2px', border: '1px solid #111', background: '#111', padding: '5px 14px', cursor: 'pointer', color: '#fff', transition: 'all 0.3s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#111' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#111'; e.currentTarget.style.color = '#fff' }}
+                  >
+                    JOIN
+                  </button>
                 </>
               )}
             </div>
@@ -193,17 +204,8 @@ function Navbar() {
 
           {/* 모바일 우측 아이콘 */}
           <div className="flex md:hidden items-center gap-4">
-            <button
-              onClick={toggleSearch}
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '4px' }}
-            >
-              🔍
-            </button>
-            <button
-              onClick={toggleMenu}
-              aria-label="메뉴"
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', width: '28px', height: '28px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
+            <button onClick={toggleSearch} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '4px' }}>🔍</button>
+            <button onClick={toggleMenu} aria-label="메뉴" style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', width: '28px', height: '28px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ position: 'absolute', display: 'block', width: '20px', transition: 'opacity 0.2s', opacity: mobileMenuOpen ? 0 : 1 }}>
                 <span style={{ display: 'block', width: '20px', height: '1.5px', background: '#111', marginBottom: '5px' }} />
                 <span style={{ display: 'block', width: '20px', height: '1.5px', background: '#111', marginBottom: '5px' }} />
@@ -267,7 +269,6 @@ function Navbar() {
           boxShadow: mobileMenuOpen ? '-4px 0 24px rgba(0,0,0,0.12)' : 'none',
         }}
       >
-        {/* 사이드바 헤더 */}
         <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', borderBottom: '0.5px solid #eee', flexShrink: 0 }}>
           <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: '1rem', letterSpacing: '-1px', color: '#111' }}>
             THE <span style={{ color: '#e62117' }}>PLATE</span>
@@ -275,7 +276,6 @@ function Navbar() {
           <button onClick={() => setMobileMenuOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#111', lineHeight: 1 }}>✕</button>
         </div>
 
-        {/* 메뉴 항목 */}
         <div style={{ flex: 1, overflowY: 'auto', paddingTop: '8px' }}>
           <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.65rem', letterSpacing: '2px' }}>
             <div onClick={() => navigate('/restaurants')} style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
@@ -295,10 +295,22 @@ function Navbar() {
               </>
             ) : (
               <>
-                <div onClick={() => navigate('/login')} style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                {/* 모바일 LOGIN → 모달 오픈 */}
+                <div
+                  onClick={() => { setActiveModal('LOGIN'); setMobileMenuOpen(false) }}
+                  style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
                   LOGIN <span style={{ color: '#ccc', fontSize: '10px' }}>→</span>
                 </div>
-                <div onClick={() => navigate('/register')} style={{ padding: '16px 24px', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                {/* 모바일 JOIN → 모달 오픈 */}
+                <div
+                  onClick={() => { setActiveModal('JOIN'); setMobileMenuOpen(false) }}
+                  style={{ padding: '16px 24px', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
                   JOIN <span style={{ color: '#ccc', fontSize: '10px' }}>→</span>
                 </div>
               </>
@@ -306,7 +318,6 @@ function Navbar() {
           </div>
         </div>
 
-        {/* 사이드바 하단 */}
         <div style={{ padding: '20px 24px', borderTop: '0.5px solid #eee', flexShrink: 0 }}>
           <p style={{ fontFamily: "'Space Mono', monospace", fontSize: '8px', letterSpacing: '2px', color: '#ccc', margin: 0 }}>
             MICHELIN GUIDE 2026
