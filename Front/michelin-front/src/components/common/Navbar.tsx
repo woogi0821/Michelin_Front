@@ -22,9 +22,6 @@ function Navbar() {
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const isIntro = location.pathname === '/' && !introUnlocked
-  if (isIntro) return null
-
   const gradeLabel = (grade: string) => {
     if (grade === '1스타') return '★ 1 STAR'
     if (grade === '빕 구르망') return 'BIB GOURMAND'
@@ -54,7 +51,6 @@ function Navbar() {
     }
   }
 
-  // ✅ A안 — 햄버거 열 때 검색창 닫기
   const toggleMenu = () => {
     setMobileMenuOpen(prev => {
       if (!prev) setMobileSearchOpen(false)
@@ -62,7 +58,6 @@ function Navbar() {
     })
   }
 
-  // ✅ A안 — 검색창 열 때 메뉴 닫기
   const toggleSearch = () => {
     setMobileSearchOpen(prev => {
       if (!prev) setMobileMenuOpen(false)
@@ -106,6 +101,10 @@ function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [mobileMenuOpen])
+
+  // ✅ 모든 hooks 아래로 이동 — Rules of Hooks 준수
+  const isIntro = location.pathname === '/' && !introUnlocked
+  if (isIntro) return null
 
   return (
     <>
@@ -194,41 +193,23 @@ function Navbar() {
 
           {/* 모바일 우측 아이콘 */}
           <div className="flex md:hidden items-center gap-4">
-            {/* 검색 아이콘 */}
             <button
               onClick={toggleSearch}
               style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '4px' }}
             >
               🔍
             </button>
-            {/* 햄버거 ↔ X 전환 */}
             <button
               onClick={toggleMenu}
               aria-label="메뉴"
               style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', width: '28px', height: '28px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              {/* 햄버거 3선 */}
-              <span style={{
-                position: 'absolute',
-                display: 'block',
-                width: '20px',
-                transition: 'opacity 0.2s',
-                opacity: mobileMenuOpen ? 0 : 1,
-              }}>
+              <span style={{ position: 'absolute', display: 'block', width: '20px', transition: 'opacity 0.2s', opacity: mobileMenuOpen ? 0 : 1 }}>
                 <span style={{ display: 'block', width: '20px', height: '1.5px', background: '#111', marginBottom: '5px' }} />
                 <span style={{ display: 'block', width: '20px', height: '1.5px', background: '#111', marginBottom: '5px' }} />
                 <span style={{ display: 'block', width: '20px', height: '1.5px', background: '#111' }} />
               </span>
-              {/* X 아이콘 */}
-              <span style={{
-                position: 'absolute',
-                fontSize: '18px',
-                color: '#111',
-                lineHeight: 1,
-                transition: 'opacity 0.2s',
-                opacity: mobileMenuOpen ? 1 : 0,
-                userSelect: 'none'
-              }}>✕</span>
+              <span style={{ position: 'absolute', fontSize: '18px', color: '#111', lineHeight: 1, transition: 'opacity 0.2s', opacity: mobileMenuOpen ? 1 : 0, userSelect: 'none' }}>✕</span>
             </button>
           </div>
         </div>
@@ -269,15 +250,10 @@ function Navbar() {
         )}
       </nav>
 
-      {/* ✅ 오른쪽 슬라이드 사이드바 (nav 바깥 fixed) */}
-
       {/* 딤 오버레이 */}
       <div
         className="md:hidden fixed inset-0 bg-black/40 z-[110] transition-opacity duration-300"
-        style={{
-          opacity: mobileMenuOpen ? 1 : 0,
-          pointerEvents: mobileMenuOpen ? 'auto' : 'none'
-        }}
+        style={{ opacity: mobileMenuOpen ? 1 : 0, pointerEvents: mobileMenuOpen ? 'auto' : 'none' }}
         onClick={() => setMobileMenuOpen(false)}
       />
 
@@ -296,68 +272,33 @@ function Navbar() {
           <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: '1rem', letterSpacing: '-1px', color: '#111' }}>
             THE <span style={{ color: '#e62117' }}>PLATE</span>
           </span>
-          <button
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#111', lineHeight: 1 }}
-          >
-            ✕
-          </button>
+          <button onClick={() => setMobileMenuOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#111', lineHeight: 1 }}>✕</button>
         </div>
 
         {/* 메뉴 항목 */}
         <div style={{ flex: 1, overflowY: 'auto', paddingTop: '8px' }}>
           <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.65rem', letterSpacing: '2px' }}>
-            <div
-              onClick={() => navigate('/restaurants')}
-              style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
+            <div onClick={() => navigate('/restaurants')} style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               RESTAURANTS <span style={{ color: '#ccc', fontSize: '10px' }}>→</span>
             </div>
-            <div
-              onClick={() => navigate('/map')}
-              style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
+            <div onClick={() => navigate('/map')} style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               MAP <span style={{ color: '#ccc', fontSize: '10px' }}>→</span>
             </div>
             {loggedIn ? (
               <>
-                <div
-                  onClick={() => navigate('/mypage')}
-                  style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
+                <div onClick={() => navigate('/mypage')} style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   MY PAGE <span style={{ color: '#ccc', fontSize: '10px' }}>→</span>
                 </div>
-                <div
-                  onClick={logout}
-                  style={{ padding: '16px 24px', cursor: 'pointer', color: '#e62117' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#fff5f5'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
+                <div onClick={logout} style={{ padding: '16px 24px', cursor: 'pointer', color: '#e62117' }} onMouseEnter={e => e.currentTarget.style.background = '#fff5f5'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   LOGOUT
                 </div>
               </>
             ) : (
               <>
-                <div
-                  onClick={() => navigate('/login')}
-                  style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
+                <div onClick={() => navigate('/login')} style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   LOGIN <span style={{ color: '#ccc', fontSize: '10px' }}>→</span>
                 </div>
-                <div
-                  onClick={() => navigate('/register')}
-                  style={{ padding: '16px 24px', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
+                <div onClick={() => navigate('/register')} style={{ padding: '16px 24px', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   JOIN <span style={{ color: '#ccc', fontSize: '10px' }}>→</span>
                 </div>
               </>

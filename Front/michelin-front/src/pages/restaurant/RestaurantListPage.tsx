@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getRestaurantList } from '../../service/restaurantApi'
 
 interface Restaurant {
@@ -56,7 +56,6 @@ const gradeTagStyle: React.CSSProperties = {
   padding: '2px 8px', display: 'inline-block', marginBottom: '6px'
 }
 
-// ── shimmer 애니메이션 keyframes (한 번만 주입) ──────────────────────
 const shimmerStyle = `
   @keyframes shimmer {
     0%   { background-position: -600px 0 }
@@ -69,7 +68,6 @@ const shimmerStyle = `
   }
 `
 
-// ── 스켈레톤 컴포넌트 ────────────────────────────────────────────────
 function SkeletonBlock({ style }: { style?: React.CSSProperties }) {
   return <div className="skeleton" style={{ borderRadius: 0, ...style }} />
 }
@@ -77,34 +75,14 @@ function SkeletonBlock({ style }: { style?: React.CSSProperties }) {
 function ListPageSkeleton({ isMobile }: { isMobile: boolean }) {
   return (
     <>
-      {/* 매거진 상단 그리드 스켈레톤 */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-        gap: '3px', marginBottom: '3px'
-      }}>
-        {/* 메인 큰 카드 */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '3px', marginBottom: '3px' }}>
         <SkeletonBlock style={{ height: isMobile ? '240px' : '320px' }} />
-
-        {/* 우측 작은 카드 2개 */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr',
-          gridTemplateRows: isMobile ? '1fr' : '1fr 1fr',
-          gap: '3px',
-          height: isMobile ? '160px' : '320px'
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr', gridTemplateRows: isMobile ? '1fr' : '1fr 1fr', gap: '3px', height: isMobile ? '160px' : '320px' }}>
           <SkeletonBlock />
           <SkeletonBlock />
         </div>
       </div>
-
-      {/* 하단 카드 그리드 스켈레톤 (9개) */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-        gap: '3px'
-      }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '3px' }}>
         {Array.from({ length: 9 }).map((_, i) => (
           <SkeletonBlock key={i} style={{ height: isMobile ? '160px' : '200px' }} />
         ))}
@@ -113,16 +91,18 @@ function ListPageSkeleton({ isMobile }: { isMobile: boolean }) {
   )
 }
 
-// ────────────────────────────────────────────────────────────────────
-
 function RestaurantListPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [filters, setFilters] = useState({ grade: '', city: '', isGreenStar: '' })
+
+  // URL 파라미터에서 keyword 읽기
+  const keyword = searchParams.get('keyword') || ''
 
   const SIZE = 12
 
@@ -132,7 +112,12 @@ function RestaurantListPage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  useEffect(() => { fetchList() }, [page, filters])
+  // keyword 변경 시 page 초기화
+  useEffect(() => {
+    setPage(0)
+  }, [keyword])
+
+  useEffect(() => { fetchList() }, [page, filters, keyword])
 
   const fetchList = async () => {
     try {
@@ -141,6 +126,7 @@ function RestaurantListPage() {
       if (filters.grade) params.grade = filters.grade
       if (filters.city) params.city = filters.city
       if (filters.isGreenStar) params.isGreenStar = filters.isGreenStar
+      if (keyword) params.keyword = keyword
       const res = await getRestaurantList(params)
       setRestaurants(res.data.data.content)
       setTotalCount(res.data.data.totalElements)
@@ -156,13 +142,18 @@ function RestaurantListPage() {
     setPage(0)
   }
 
+  // 키워드 초기화
+  const clearKeyword = () => {
+    setSearchParams({})
+    setPage(0)
+  }
+
   const totalPages = Math.ceil(totalCount / SIZE)
   const featured = restaurants.slice(0, 3)
   const rest = restaurants.slice(3)
 
   return (
     <>
-      {/* shimmer keyframes 주입 */}
       <style>{shimmerStyle}</style>
 
       <div style={{ fontFamily: "'Space Mono', monospace", background: '#fdfdfd', minHeight: '100vh', padding: '2rem 5vw' }}>
@@ -176,6 +167,24 @@ function RestaurantListPage() {
             BUSAN 2026 · {loading ? '—' : totalCount} RESTAURANTS
           </div>
         </div>
+
+        {/* 키워드 검색 배너 */}
+        {keyword && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#111', marginBottom: '1rem' }}>
+            <div style={{ fontSize: '10px', letterSpacing: '2px', color: '#fff' }}>
+              SEARCH · <span style={{ color: '#e62117' }}>{keyword}</span>
+              <span style={{ color: '#aaa', marginLeft: '8px' }}>
+                {loading ? '' : `${totalCount}건`}
+              </span>
+            </div>
+            <button
+              onClick={clearKeyword}
+              style={{ fontSize: '10px', letterSpacing: '1px', color: '#aaa', background: 'transparent', border: 'none', cursor: 'pointer' }}
+            >
+              ✕ 초기화
+            </button>
+          </div>
+        )}
 
         {/* 필터바 */}
         <div style={{ display: 'flex', gap: '6px', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -208,12 +217,28 @@ function RestaurantListPage() {
           </div>
         )}
 
-        {/* ── 로딩: 스켈레톤 / 완료: 실제 콘텐츠 ── */}
+        {/* 검색 결과 없을 때 */}
+        {!loading && restaurants.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '4rem', fontFamily: "'Space Mono', monospace" }}>
+            <div style={{ fontSize: '11px', letterSpacing: '3px', color: '#aaa', marginBottom: '1rem' }}>
+              NO RESULTS
+            </div>
+            {keyword && (
+              <button
+                onClick={clearKeyword}
+                style={{ fontSize: '10px', letterSpacing: '2px', padding: '8px 20px', border: '0.5px solid #111', background: 'transparent', cursor: 'pointer', color: '#111' }}
+              >
+                전체 목록 보기
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* 로딩: 스켈레톤 / 완료: 실제 콘텐츠 */}
         {loading ? (
           <ListPageSkeleton isMobile={isMobile} />
         ) : (
           <>
-            {/* 매거진 상단 그리드 */}
             {featured.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '3px', marginBottom: '3px' }}>
                 <div onClick={() => navigate(`/restaurants/${featured[0].id}`)} style={{ position: 'relative', height: isMobile ? '240px' : '320px', overflow: 'hidden', background: '#1a1a1a', cursor: 'pointer' }}>
@@ -241,7 +266,6 @@ function RestaurantListPage() {
               </div>
             )}
 
-            {/* 카드 그리드 */}
             {rest.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '3px', marginBottom: '3px' }}>
                 {rest.map((r, i) => (
