@@ -101,9 +101,7 @@ function RestaurantListPage() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [filters, setFilters] = useState({ grade: '', city: '', isGreenStar: '' })
 
-  // URL 파라미터에서 keyword 읽기
   const keyword = searchParams.get('keyword') || ''
-
   const SIZE = 12
 
   useEffect(() => {
@@ -112,7 +110,6 @@ function RestaurantListPage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // keyword 변경 시 page 초기화
   useEffect(() => {
     setPage(0)
   }, [keyword])
@@ -142,7 +139,6 @@ function RestaurantListPage() {
     setPage(0)
   }
 
-  // 키워드 초기화
   const clearKeyword = () => {
     setSearchParams({})
     setPage(0)
@@ -158,15 +154,7 @@ function RestaurantListPage() {
 
       <div style={{ fontFamily: "'Space Mono', monospace", background: '#fdfdfd', minHeight: '100vh', padding: '2rem 5vw' }}>
 
-        {/* 페이지 헤더 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem', borderBottom: '2px solid #111', paddingBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? '1.4rem' : '1.8rem', fontWeight: 900, letterSpacing: '-1px', color: '#111' }}>
-            THE <span style={{ color: '#e62117' }}>PLATE</span>.
-          </div>
-          <div style={{ fontSize: '10px', letterSpacing: '3px', color: '#aaa' }}>
-            BUSAN 2026 · {loading ? '—' : totalCount} RESTAURANTS
-          </div>
-        </div>
+        {/* ✅ 페이지 헤더 제거 (THE PLATE + BUSAN 2026 · N RESTAURANTS) */}
 
         {/* 키워드 검색 배너 */}
         {keyword && (

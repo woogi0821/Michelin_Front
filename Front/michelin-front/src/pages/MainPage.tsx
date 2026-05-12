@@ -157,7 +157,7 @@ function MainPage() {
                     color: '#111'
                   }}
                 >
-                  THE<br />PLATE.
+                  THE<br />PLATE
                 </h1>
                 <p
                   style={{ fontFamily: "'Space Mono', monospace" }}
