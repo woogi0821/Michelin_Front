@@ -169,6 +169,8 @@ function Navbar() {
             <div className="flex gap-8" style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.65rem', letterSpacing: '3px' }}>
               <span onClick={() => navigate('/restaurants')} className="cursor-pointer" style={{ color: '#111' }} onMouseEnter={e => e.currentTarget.style.color = '#e62117'} onMouseLeave={e => e.currentTarget.style.color = '#111'}>RESTAURANTS</span>
               <span onClick={() => navigate('/map')} className="cursor-pointer" style={{ color: '#111' }} onMouseEnter={e => e.currentTarget.style.color = '#e62117'} onMouseLeave={e => e.currentTarget.style.color = '#111'}>MAP</span>
+              {/* ✅ 추가: NOTICES 탭 */}
+              <span onClick={() => navigate('/notices')} className="cursor-pointer" style={{ color: '#111' }} onMouseEnter={e => e.currentTarget.style.color = '#e62117'} onMouseLeave={e => e.currentTarget.style.color = '#111'}>NOTICES</span>
             </div>
             <div className="flex items-center gap-6" style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.65rem', letterSpacing: '2px' }}>
               {loggedIn ? (
@@ -178,7 +180,6 @@ function Navbar() {
                 </>
               ) : (
                 <>
-                  {/* LOGIN → 모달 오픈 */}
                   <span
                     onClick={() => setActiveModal('LOGIN')}
                     className="cursor-pointer"
@@ -188,7 +189,6 @@ function Navbar() {
                   >
                     LOGIN
                   </span>
-                  {/* JOIN → 모달 오픈 */}
                   <button
                     onClick={() => setActiveModal('JOIN')}
                     style={{ fontFamily: "'Space Mono', monospace", fontSize: '0.6rem', letterSpacing: '2px', border: '1px solid #111', background: '#111', padding: '5px 14px', cursor: 'pointer', color: '#fff', transition: 'all 0.3s' }}
@@ -284,6 +284,10 @@ function Navbar() {
             <div onClick={() => navigate('/map')} style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               MAP <span style={{ color: '#ccc', fontSize: '10px' }}>→</span>
             </div>
+            {/* ✅ 추가: 모바일 NOTICES */}
+            <div onClick={() => navigate('/notices')} style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              NOTICES <span style={{ color: '#ccc', fontSize: '10px' }}>→</span>
+            </div>
             {loggedIn ? (
               <>
                 <div onClick={() => navigate('/mypage')} style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} onMouseEnter={e => e.currentTarget.style.background = '#f9f9f9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
@@ -295,7 +299,6 @@ function Navbar() {
               </>
             ) : (
               <>
-                {/* 모바일 LOGIN → 모달 오픈 */}
                 <div
                   onClick={() => { setActiveModal('LOGIN'); setMobileMenuOpen(false) }}
                   style={{ padding: '16px 24px', borderBottom: '0.5px solid #eee', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
@@ -304,7 +307,6 @@ function Navbar() {
                 >
                   LOGIN <span style={{ color: '#ccc', fontSize: '10px' }}>→</span>
                 </div>
-                {/* 모바일 JOIN → 모달 오픈 */}
                 <div
                   onClick={() => { setActiveModal('JOIN'); setMobileMenuOpen(false) }}
                   style={{ padding: '16px 24px', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
