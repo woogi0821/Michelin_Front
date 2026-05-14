@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import RestaurantMapContainer from "../components/restaurant/RestaurantMapContainer";
-// import { useNavigate } from "react-router-dom"; //라우터 연결 후 주석 풀어주세요
+import { useNavigate } from "react-router-dom";
 
 interface Restaurant {
   id: number;
@@ -24,25 +24,18 @@ const RestaurantPage = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [mapCenter, setMapCenter] = useState({ lat: 35.1795, lng: 129.0756 });
-  const [fetchLocation, setFetchLocation] = useState({
-    lat: 35.1795,
-    lng: 129.0756,
-  });
-  const [userLocation, setUserLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
+  const [fetchLocation, setFetchLocation] = useState({ lat: 35.1795, lng: 129.0756 });
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const categories = ["전체", "한식", "일식", "중식", "양식", "아시안"];
   const [isSearching, setIsSearching] = useState(false);
-  // const navigate = useNavigate(); // 라우터 연결 후 주석 풀어주세요
+  const navigate = useNavigate();
 
   const filteredRestaurants = restaurants.filter((res) => {
     const normalizedName = res.restaurantName.replace(/\s+/g, "").toLowerCase();
     const normalizedSearch = searchTerm.replace(/\s+/g, "").toLowerCase();
     const isNameMatch = normalizedName.includes(normalizedSearch);
-    const isCategoryMatch =
-      selectedCategory === "전체" || res.category === selectedCategory;
+    const isCategoryMatch = selectedCategory === "전체" || res.category === selectedCategory;
     return isNameMatch && isCategoryMatch;
   });
 
@@ -77,9 +70,7 @@ const RestaurantPage = () => {
     setSearchTerm(value);
     if (value.trim().length > 0) {
       const filtered = restaurants
-        .filter((r) =>
-          r.restaurantName.toLowerCase().includes(value.toLowerCase()),
-        )
+        .filter((r) => r.restaurantName.toLowerCase().includes(value.toLowerCase()))
         .slice(0, 5);
       setSuggestions(filtered);
       setShowSuggestions(true);
@@ -96,12 +87,9 @@ const RestaurantPage = () => {
     }
     try {
       setIsSearching(true);
-      const response = await axios.get(
-        "http://localhost:8080/api/restaurants/search",
-        {
-          params: { name: query },
-        },
-      );
+      const response = await axios.get("http://localhost:8080/api/restaurants/search", {
+        params: { name: query },
+      });
       setRestaurants(response.data);
       setShowSuggestions(false);
     } catch (error) {
@@ -114,30 +102,17 @@ const RestaurantPage = () => {
     if (e.key === "Enter") handleSearch();
   };
 
-  // 이미지 클릭 시 상세페이지로 이동하는 함수
   const handleImageClick = (id: number) => {
-    console.log(`식당 ID: ${id}번 상세페이지로 이동을 시도합니다.`);
-    
-    // 나중에 팀원이 상세페이지 라우팅을 합치면 이 아래 주석을 풀고 alert를 지워주세요
-    // navigate(`/restaurant/${id}`); 
-    
-    alert(`나중에 ${id}번 식당 상세페이지로 연결될 예정입니다!`); // 나중에 이거 지우기
+    navigate(`/restaurants/${id}`);
   };
 
   return (
-    <div
-      style={{
-        position: "relative",
-        width: "100vw",
-        height: "100vh",
-        overflow: "hidden",
-      }}
-    >
+    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
       <div style={{ width: "100%", height: "100%", zIndex: 1 }}>
         <RestaurantMapContainer
           restaurants={filteredRestaurants}
           selectedId={selectedId}
-          onSelect={(id) => {
+          onSelect={(id: number) => {                          // ✅ 타입 명시
             setSelectedId(id);
             setIsSidebarOpen(true);
             const selected = restaurants.find((r) => r.id === id);
@@ -146,7 +121,7 @@ const RestaurantPage = () => {
               setFetchLocation({ lat: selected.lat, lng: selected.lng });
             }
           }}
-          onCenterChange={(newCenter) => {
+          onCenterChange={(newCenter: { lat: number; lng: number }) => {  // ✅ 타입 명시
             if (!isSearching) setFetchLocation(newCenter);
           }}
           center={mapCenter}
@@ -171,14 +146,7 @@ const RestaurantPage = () => {
         }}
       >
         <div style={{ padding: "20px", borderBottom: "1px solid #eee" }}>
-          <h2
-            style={{
-              margin: 0,
-              marginBottom: "15px",
-              fontSize: "1.2rem",
-              color: "#e62117",
-            }}
-          >
+          <h2 style={{ margin: 0, marginBottom: "15px", fontSize: "1.2rem", color: "#e62117" }}>
             📍 미쉐린 가이드
           </h2>
           <div className="search-container" style={{ position: "relative" }}>
@@ -188,42 +156,23 @@ const RestaurantPage = () => {
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder="식당 이름을 입력하세요"
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: "8px",
-                border: "1px solid #ddd",
-              }}
+              style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ddd" }}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             />
             {showSuggestions && suggestions.length > 0 && (
               <ul
                 style={{
-                  position: "absolute",
-                  top: "100%",
-                  left: 0,
-                  right: 0,
-                  backgroundColor: "white",
-                  border: "1px solid #ccc",
-                  zIndex: 1000,
-                  listStyle: "none",
-                  padding: 0,
-                  margin: 0,
+                  position: "absolute", top: "100%", left: 0, right: 0,
+                  backgroundColor: "white", border: "1px solid #ccc",
+                  zIndex: 1000, listStyle: "none", padding: 0, margin: 0,
                   borderRadius: "0 0 8px 8px",
                 }}
               >
                 {suggestions.map((s) => (
                   <li
                     key={s.id}
-                    onClick={() => {
-                      setSearchTerm(s.restaurantName);
-                      handleSearch(s.restaurantName);
-                    }}
-                    style={{
-                      padding: "10px",
-                      cursor: "pointer",
-                      borderBottom: "1px solid #eee",
-                    }}
+                    onClick={() => { setSearchTerm(s.restaurantName); handleSearch(s.restaurantName); }}
+                    style={{ padding: "10px", cursor: "pointer", borderBottom: "1px solid #eee" }}
                   >
                     {s.restaurantName}
                   </li>
@@ -231,30 +180,16 @@ const RestaurantPage = () => {
               </ul>
             )}
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
-              marginTop: "15px",
-            }}
-          >
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "15px" }}>
             {categories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => {
-                  setSelectedCategory(cat);
-                  setIsSearching(false);
-                }}
+                onClick={() => { setSelectedCategory(cat); setIsSearching(false); }}
                 style={{
-                  padding: "6px 12px",
-                  borderRadius: "20px",
-                  border: "1px solid #ddd",
-                  backgroundColor:
-                    selectedCategory === cat ? "#e62117" : "white",
+                  padding: "6px 12px", borderRadius: "20px", border: "1px solid #ddd",
+                  backgroundColor: selectedCategory === cat ? "#e62117" : "white",
                   color: selectedCategory === cat ? "white" : "#333",
-                  cursor: "pointer",
-                  fontSize: "0.85rem",
+                  cursor: "pointer", fontSize: "0.85rem",
                 }}
               >
                 {cat}
@@ -265,37 +200,21 @@ const RestaurantPage = () => {
 
         <div style={{ flex: 1, overflowY: "auto" }}>
           {selectedRestaurant ? (
-            /* --- 상세 정보 화면 --- */
             <div style={{ padding: "20px", animation: "fadeIn 0.3s" }}>
-              {/* 이미지 감싸는 div에 클릭 이벤트와 커서 스타일 추가 */}
               <div
                 onClick={() => handleImageClick(selectedRestaurant.id)}
                 style={{
-                  width: "100%",
-                  height: "200px",
-                  background: "#eee",
-                  borderRadius: "12px",
-                  marginBottom: "15px",
-                  overflow: "hidden",
-                  cursor: "pointer", // 마우스 올리면 손가락 모양
+                  width: "100%", height: "200px", background: "#eee",
+                  borderRadius: "12px", marginBottom: "15px",
+                  overflow: "hidden", cursor: "pointer",
                 }}
               >
                 <img
                   src={selectedRestaurant.imageUrl || "기본이미지주소"}
                   alt="식당이미지"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    transition: "transform 0.3s ease", // 부드러운 확대 효과
-                  }}
-                  // 마우스 올리면 5% 확대
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.transform = "scale(1.05)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.transform = "scale(1)")
-                  }
+                  style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s ease" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                 />
               </div>
 
@@ -307,32 +226,21 @@ const RestaurantPage = () => {
                 <span
                   style={{
                     background:
-                      selectedRestaurant.markerColor.toLowerCase() ===
-                        "yellow" || selectedRestaurant.markerColor === "#ffff00"
-                        ? "#FFD700"
-                        : selectedRestaurant.markerColor,
+                      selectedRestaurant.markerColor.toLowerCase() === "yellow" ||
+                      selectedRestaurant.markerColor === "#ffff00"
+                        ? "#FFD700" : selectedRestaurant.markerColor,
                     color:
-                      selectedRestaurant.markerColor.toLowerCase() ===
-                        "yellow" || selectedRestaurant.markerColor === "#ffff00"
-                        ? "#000000"
-                        : "white",
-                    padding: "4px 12px",
-                    borderRadius: "20px",
-                    fontSize: "0.85rem",
-                    fontWeight: "bold",
-                    marginRight: "8px",
-                    display: "inline-block",
+                      selectedRestaurant.markerColor.toLowerCase() === "yellow" ||
+                      selectedRestaurant.markerColor === "#ffff00"
+                        ? "#000000" : "white",
+                    padding: "4px 12px", borderRadius: "20px",
+                    fontSize: "0.85rem", fontWeight: "bold",
+                    marginRight: "8px", display: "inline-block",
                   }}
                 >
                   {selectedRestaurant.grade}
                 </span>
-                <span
-                  style={{
-                    color: "#555",
-                    fontSize: "0.9rem",
-                    fontWeight: "500",
-                  }}
-                >
+                <span style={{ color: "#555", fontSize: "0.9rem", fontWeight: "500" }}>
                   {selectedRestaurant.category}
                 </span>
               </div>
@@ -343,15 +251,23 @@ const RestaurantPage = () => {
               </div>
 
               <button
+                onClick={() => handleImageClick(selectedRestaurant.id)}
+                style={{
+                  width: "100%", padding: "12px", marginTop: "12px",
+                  borderRadius: "8px", border: "none",
+                  backgroundColor: "#e62117", color: "white",
+                  cursor: "pointer", fontWeight: "bold", fontSize: "0.9rem",
+                }}
+              >
+                상세페이지로 이동 →
+              </button>
+
+              <button
                 onClick={() => setSelectedId(null)}
                 style={{
-                  width: "100%",
-                  padding: "12px",
-                  marginTop: "20px",
-                  borderRadius: "8px",
-                  border: "1px solid #ddd",
-                  cursor: "pointer",
-                  fontWeight: "bold",
+                  width: "100%", padding: "12px", marginTop: "8px",
+                  borderRadius: "8px", border: "1px solid #ddd",
+                  cursor: "pointer", fontWeight: "bold",
                 }}
               >
                 목록으로 돌아가기
@@ -363,34 +279,14 @@ const RestaurantPage = () => {
                 filteredRestaurants.map((res) => (
                   <div
                     key={res.id}
-                    onClick={() => {
-                      setSelectedId(res.id);
-                      setMapCenter({ lat: res.lat, lng: res.lng });
-                    }}
-                    style={{
-                      padding: "20px",
-                      borderBottom: "1px solid #f9f9f9",
-                      cursor: "pointer",
-                    }}
+                    onClick={() => { setSelectedId(res.id); setMapCenter({ lat: res.lat, lng: res.lng }); }}
+                    style={{ padding: "20px", borderBottom: "1px solid #f9f9f9", cursor: "pointer" }}
                   >
-                    <div style={{ fontWeight: "bold" }}>
-                      {res.restaurantName}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "0.8rem",
-                        marginTop: "5px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "5px",
-                      }}
-                    >
+                    <div style={{ fontWeight: "bold" }}>{res.restaurantName}</div>
+                    <div style={{ fontSize: "0.8rem", marginTop: "5px", display: "flex", alignItems: "center", gap: "5px" }}>
                       <span
                         style={{
-                          color:
-                            res.markerColor.toLowerCase() === "yellow"
-                              ? "#b8860b"
-                              : res.markerColor,
+                          color: res.markerColor.toLowerCase() === "yellow" ? "#b8860b" : res.markerColor,
                           fontWeight: "bold",
                         }}
                       >
@@ -402,13 +298,7 @@ const RestaurantPage = () => {
                   </div>
                 ))
               ) : (
-                <div
-                  style={{
-                    padding: "50px 0",
-                    textAlign: "center",
-                    color: "#bbb",
-                  }}
-                >
+                <div style={{ padding: "50px 0", textAlign: "center", color: "#bbb" }}>
                   검색 결과가 없습니다.
                 </div>
               )}
@@ -419,18 +309,11 @@ const RestaurantPage = () => {
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           style={{
-            position: "absolute",
-            right: "-30px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            width: "30px",
-            height: "60px",
-            backgroundColor: "white",
-            border: "1px solid #ddd",
-            borderLeft: "none",
-            borderRadius: "0 8px 8px 0",
-            cursor: "pointer",
-            color: "#e62117",
+            position: "absolute", right: "-30px", top: "50%",
+            transform: "translateY(-50%)", width: "30px", height: "60px",
+            backgroundColor: "white", border: "1px solid #ddd",
+            borderLeft: "none", borderRadius: "0 8px 8px 0",
+            cursor: "pointer", color: "#e62117",
           }}
         >
           {isSidebarOpen ? "◀" : "▶"}
