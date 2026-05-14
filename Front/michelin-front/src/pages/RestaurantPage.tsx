@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import RestaurantMapContainer from "../components/restaurant/RestaurantMapContainer";
+// import { useNavigate } from "react-router-dom"; //라우터 연결 후 주석 풀어주세요
 
 interface Restaurant {
   id: number;
@@ -19,9 +20,10 @@ const RestaurantPage = () => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [suggestions, setSuggestions] = useState<Restaurant[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [mapCenter, setMapCenter] = useState({ lat: 35.1795, lng: 129.0756 });
-  // 실제로 서버에서 데이터를 불러올 "기준" 좌표 (지도가 멈췄을 때만 업데이트)
   const [fetchLocation, setFetchLocation] = useState({
     lat: 35.1795,
     lng: 129.0756,
@@ -33,6 +35,7 @@ const RestaurantPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const categories = ["전체", "한식", "일식", "중식", "양식", "아시안"];
   const [isSearching, setIsSearching] = useState(false);
+  // const navigate = useNavigate(); // 라우터 연결 후 주석 풀어주세요
 
   const filteredRestaurants = restaurants.filter((res) => {
     const normalizedName = res.restaurantName.replace(/\s+/g, "").toLowerCase();
@@ -52,13 +55,12 @@ const RestaurantPage = () => {
         const lng = position.coords.longitude;
         setUserLocation({ lat, lng });
         setMapCenter({ lat, lng });
-        setFetchLocation({ lat, lng }); // 초기 위치 설정
+        setFetchLocation({ lat, lng });
       });
     }
   }, []);
 
   useEffect(() => {
-    // 검색 모드가 아닐 때만 주변 식당을 가져옵니다.
     if (!isSearching) {
       axios
         .get("http://localhost:8080/api/restaurants/markers", {
@@ -68,28 +70,58 @@ const RestaurantPage = () => {
           setRestaurants(response.data);
         });
     }
-  }, [fetchLocation, isSearching]); // mapCenter 대신 fetchLocation을 감시
+  }, [fetchLocation, isSearching]);
 
-  const handleSearch = async (e?: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e && e.key !== "Enter") return;
-    if (!searchTerm.trim()) {
-      setIsSearching(false); // 검색어 없으면 검색 모드 해제
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    if (value.trim().length > 0) {
+      const filtered = restaurants
+        .filter((r) =>
+          r.restaurantName.toLowerCase().includes(value.toLowerCase()),
+        )
+        .slice(0, 5);
+      setSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSearch = async (targetName?: string) => {
+    const query = typeof targetName === "string" ? targetName : searchTerm;
+    if (!query.trim()) {
+      setIsSearching(false);
       return;
     }
-
     try {
-      setIsSearching(true); // ★ 검색 모드 시작 (주변 식당 불러오기 중단)
+      setIsSearching(true);
       const response = await axios.get(
         "http://localhost:8080/api/restaurants/search",
         {
-          params: { name: searchTerm },
+          params: { name: query },
         },
       );
       setRestaurants(response.data);
+      setShowSuggestions(false);
     } catch (error) {
       console.error("검색 실패:", error);
       alert("검색 중 오류가 발생했습니다.");
     }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
+  // 이미지 클릭 시 상세페이지로 이동하는 함수
+  const handleImageClick = (id: number) => {
+    console.log(`식당 ID: ${id}번 상세페이지로 이동을 시도합니다.`);
+    
+    // 나중에 팀원이 상세페이지 라우팅을 합치면 이 아래 주석을 풀고 alert를 지워주세요
+    // navigate(`/restaurant/${id}`); 
+    
+    alert(`나중에 ${id}번 식당 상세페이지로 연결될 예정입니다!`); // 나중에 이거 지우기
   };
 
   return (
@@ -101,7 +133,6 @@ const RestaurantPage = () => {
         overflow: "hidden",
       }}
     >
-      {/* 1. 바탕이 되는 지도 영역 (전체 화면 차지) */}
       <div style={{ width: "100%", height: "100%", zIndex: 1 }}>
         <RestaurantMapContainer
           restaurants={filteredRestaurants}
@@ -111,27 +142,18 @@ const RestaurantPage = () => {
             setIsSidebarOpen(true);
             const selected = restaurants.find((r) => r.id === id);
             if (selected) {
-              // 식당 클릭 시 지도를 해당 위치로 "강제 고정" 이동
               setMapCenter({ lat: selected.lat, lng: selected.lng });
               setFetchLocation({ lat: selected.lat, lng: selected.lng });
             }
           }}
-          //  지도를 드래그할 때마다 서버를 부르지 않도록 설정
           onCenterChange={(newCenter) => {
-            // 검색 모드가 아닐 때만 현재 지도의 중심 좌표를 부모 상태에 저장합니다.
-            if (!isSearching) {
-              
-              //  검색 중이 아닐 때만 fetchLocation도 업데이트
-              // (드래그 할 때마다 서버를 부르는 게 부담되면 이 부분을 '나중에' 호출하게 조절해야함)
-              setFetchLocation(newCenter);
-            }
+            if (!isSearching) setFetchLocation(newCenter);
           }}
           center={mapCenter}
           userLocation={userLocation}
         />
       </div>
 
-      {/* 2. 지도 위에 뜨는 사이드바 */}
       <div
         style={{
           position: "absolute",
@@ -148,30 +170,66 @@ const RestaurantPage = () => {
           flexDirection: "column",
         }}
       >
-        {/* 상단 검색 및 카테고리 영역 */}
         <div style={{ padding: "20px", borderBottom: "1px solid #eee" }}>
-          <h2 style={{ margin: 0, fontSize: "1.2rem", color: "#e62117" }}>
+          <h2
+            style={{
+              margin: 0,
+              marginBottom: "15px",
+              fontSize: "1.2rem",
+              color: "#e62117",
+            }}
+          >
             📍 미쉐린 가이드
           </h2>
-          <div style={{ marginTop: "15px" }}>
+          <div className="search-container" style={{ position: "relative" }}>
             <input
               type="text"
-              placeholder="식당 검색 후 엔터..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={handleSearch} // ★ 엔터 키 이벤트 연결 부분
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="식당 이름을 입력하세요"
               style={{
-                width: "80%",
-                maxWidth: "300px",
-                padding: "8px 12px",
-                fontSize: "0.9rem",
-                borderRadius: "20px",
+                width: "100%",
+                padding: "10px",
+                borderRadius: "8px",
                 border: "1px solid #ddd",
-                outline: "none",
-                display: "block",
-                margin: "0 auto",
               }}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             />
+            {showSuggestions && suggestions.length > 0 && (
+              <ul
+                style={{
+                  position: "absolute",
+                  top: "100%",
+                  left: 0,
+                  right: 0,
+                  backgroundColor: "white",
+                  border: "1px solid #ccc",
+                  zIndex: 1000,
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  borderRadius: "0 0 8px 8px",
+                }}
+              >
+                {suggestions.map((s) => (
+                  <li
+                    key={s.id}
+                    onClick={() => {
+                      setSearchTerm(s.restaurantName);
+                      handleSearch(s.restaurantName);
+                    }}
+                    style={{
+                      padding: "10px",
+                      cursor: "pointer",
+                      borderBottom: "1px solid #eee",
+                    }}
+                  >
+                    {s.restaurantName}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <div
             style={{
@@ -186,7 +244,7 @@ const RestaurantPage = () => {
                 key={cat}
                 onClick={() => {
                   setSelectedCategory(cat);
-                  setIsSearching(false); // 카테고리 누르면 검색 모드 해제 (주변 찾기 활성화)
+                  setIsSearching(false);
                 }}
                 style={{
                   padding: "6px 12px",
@@ -205,12 +263,13 @@ const RestaurantPage = () => {
           </div>
         </div>
 
-        {/* 리스트/상세정보 영역 */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {selectedRestaurant ? (
             /* --- 상세 정보 화면 --- */
             <div style={{ padding: "20px", animation: "fadeIn 0.3s" }}>
+              {/* 이미지 감싸는 div에 클릭 이벤트와 커서 스타일 추가 */}
               <div
+                onClick={() => handleImageClick(selectedRestaurant.id)}
                 style={{
                   width: "100%",
                   height: "200px",
@@ -218,39 +277,71 @@ const RestaurantPage = () => {
                   borderRadius: "12px",
                   marginBottom: "15px",
                   overflow: "hidden",
+                  cursor: "pointer", // 마우스 올리면 손가락 모양
                 }}
               >
                 <img
                   src={selectedRestaurant.imageUrl || "기본이미지주소"}
                   alt="식당이미지"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    transition: "transform 0.3s ease", // 부드러운 확대 효과
+                  }}
+                  // 마우스 올리면 5% 확대
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.transform = "scale(1.05)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.transform = "scale(1)")
+                  }
                 />
               </div>
+
               <h1 style={{ fontSize: "1.5rem", marginBottom: "10px" }}>
                 {selectedRestaurant.restaurantName}
               </h1>
+
               <div style={{ marginBottom: "15px" }}>
                 <span
                   style={{
-                    background: selectedRestaurant.markerColor,
-                    color: "white",
-                    padding: "4px 10px",
+                    background:
+                      selectedRestaurant.markerColor.toLowerCase() ===
+                        "yellow" || selectedRestaurant.markerColor === "#ffff00"
+                        ? "#FFD700"
+                        : selectedRestaurant.markerColor,
+                    color:
+                      selectedRestaurant.markerColor.toLowerCase() ===
+                        "yellow" || selectedRestaurant.markerColor === "#ffff00"
+                        ? "#000000"
+                        : "white",
+                    padding: "4px 12px",
                     borderRadius: "20px",
-                    fontSize: "0.8rem",
+                    fontSize: "0.85rem",
                     fontWeight: "bold",
                     marginRight: "8px",
+                    display: "inline-block",
                   }}
                 >
                   {selectedRestaurant.grade}
                 </span>
-                <span style={{ color: "#888", fontSize: "0.9rem" }}>
+                <span
+                  style={{
+                    color: "#555",
+                    fontSize: "0.9rem",
+                    fontWeight: "500",
+                  }}
+                >
                   {selectedRestaurant.category}
                 </span>
               </div>
+
               <div style={{ fontSize: "0.9rem", lineHeight: "1.8" }}>
                 <p>🏠 주소: {selectedRestaurant.address || "주소 없음"}</p>
                 <p>📞 전화: {selectedRestaurant.phone || "전화 없음"}</p>
               </div>
+
               <button
                 onClick={() => setSelectedId(null)}
                 style={{
@@ -267,7 +358,6 @@ const RestaurantPage = () => {
               </button>
             </div>
           ) : (
-            /* --- 검색 리스트 화면 --- */
             <div>
               {filteredRestaurants.length > 0 ? (
                 filteredRestaurants.map((res) => (
@@ -275,7 +365,6 @@ const RestaurantPage = () => {
                     key={res.id}
                     onClick={() => {
                       setSelectedId(res.id);
-                      // 리스트 클릭 시 해당 위치로 지도 이동
                       setMapCenter({ lat: res.lat, lng: res.lng });
                     }}
                     style={{
@@ -290,11 +379,25 @@ const RestaurantPage = () => {
                     <div
                       style={{
                         fontSize: "0.8rem",
-                        color: "#e62117",
                         marginTop: "5px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
                       }}
                     >
-                      {res.grade} | {res.category}
+                      <span
+                        style={{
+                          color:
+                            res.markerColor.toLowerCase() === "yellow"
+                              ? "#b8860b"
+                              : res.markerColor,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {res.grade}
+                      </span>
+                      <span style={{ color: "#ddd" }}>|</span>
+                      <span style={{ color: "#666" }}>{res.category}</span>
                     </div>
                   </div>
                 ))
@@ -313,7 +416,6 @@ const RestaurantPage = () => {
           )}
         </div>
 
-        {/* 사이드바 토글 버튼 */}
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           style={{
@@ -334,9 +436,9 @@ const RestaurantPage = () => {
           {isSidebarOpen ? "◀" : "▶"}
         </button>
       </div>
-
       <style>{`@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
     </div>
   );
 };
+
 export default RestaurantPage;
