@@ -9,16 +9,14 @@ export const useAuthStore = create<IAuthState>()(
       memberGrade: null,
       activeModal: "NONE",
       accessToken: localStorage.getItem("accessToken") || null,
-      // ✅ 추가
       toastMessage: null,
+      introUnlocked: false,
 
       login: (grade: string, token: string) => {
-        // localStorage.setItem("accessToken", token);
         set({ loggedIn: true, memberGrade: grade, accessToken: token });
       },
 
       logout: () => {
-        // localStorage.removeItem("accessToken");
         set({ loggedIn: false, memberGrade: null, activeModal: "NONE", accessToken: null });
       },
 
@@ -34,18 +32,22 @@ export const useAuthStore = create<IAuthState>()(
         set({ activeModal: "NONE" });
       },
 
-      // ✅ 추가
       setToastMessage: (msg: string | null) => {
         set({ toastMessage: msg });
+      },
+
+      setIntroUnlocked: () => {
+        set({ introUnlocked: true })
       },
     }),
     {
       name: "auth-storage",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => sessionStorage), // ← localStorage → sessionStorage
       partialize: (state) => ({
-        accessToken:state.accessToken,
+        accessToken: state.accessToken,
         loggedIn: state.loggedIn,
         memberGrade: state.memberGrade,
+        introUnlocked: state.introUnlocked,
       }),
     }
   )

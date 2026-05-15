@@ -182,3 +182,41 @@
     border-right-color: var(--border);
   }
 }
+/* 임시사용 */
+.map-container-wrapper {
+  width: 100%;
+  height: 100vh; /* 화면 높이를 꽉 채웁니다 */
+  position: relative;
+  overflow: hidden;
+}
+
+/* 기존 #root의 너비 제한을 무시하고 지도가 퍼지게 합니다 */
+.full-screen-map {
+  width: 100vw;
+  height: 100vh;
+  margin-left: calc(-50vw + 50%);
+}
+.custom-pin {
+  width: 28px;
+  height: 28px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg); /* 물방울 모양을 위해 회전 */
+  border: 2px solid white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 등급별 색상 (원하시는 색상으로 변경 가능) */
+.pin-star { background: #e62117; }      /* 1스타: 빨강 */
+.pin-bib { background: #1d9a52; }       /* 빕구르망: 초록 */
+.pin-selected { background: #111; }     /* 셀렉티드: 블랙 */
+
+/* 내부 심볼(글자나 아이콘) */
+.pin-content {
+  transform: rotate(45deg); /* 회전된 핀 내부에서 글자만 다시 똑바로 */
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+}
