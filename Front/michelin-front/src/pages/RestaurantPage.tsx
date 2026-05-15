@@ -31,6 +31,14 @@ const RestaurantPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
 
+  // ✅ 지도 페이지 진입 시 body 스크롤 제거 → 우측 스크롤바 사라짐
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   const filteredRestaurants = restaurants.filter((res) => {
     const normalizedName = res.restaurantName.replace(/\s+/g, "").toLowerCase();
     const normalizedSearch = searchTerm.replace(/\s+/g, "").toLowerCase();
@@ -107,12 +115,12 @@ const RestaurantPage = () => {
   };
 
   return (
-    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
+    <div style={{ position: "relative", width: "100%", height: "100vh", overflow: "hidden" }}>
       <div style={{ width: "100%", height: "100%", zIndex: 1 }}>
         <RestaurantMapContainer
           restaurants={filteredRestaurants}
           selectedId={selectedId}
-          onSelect={(id: number) => {                          // ✅ 타입 명시
+          onSelect={(id: number) => {
             setSelectedId(id);
             setIsSidebarOpen(true);
             const selected = restaurants.find((r) => r.id === id);
@@ -121,7 +129,7 @@ const RestaurantPage = () => {
               setFetchLocation({ lat: selected.lat, lng: selected.lng });
             }
           }}
-          onCenterChange={(newCenter: { lat: number; lng: number }) => {  // ✅ 타입 명시
+          onCenterChange={(newCenter: { lat: number; lng: number }) => {
             if (!isSearching) setFetchLocation(newCenter);
           }}
           center={mapCenter}
