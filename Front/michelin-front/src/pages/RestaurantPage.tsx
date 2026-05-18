@@ -115,12 +115,12 @@ const RestaurantPage = () => {
   };
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100vh", overflow: "hidden" }}>
+    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
       <div style={{ width: "100%", height: "100%", zIndex: 1 }}>
         <RestaurantMapContainer
           restaurants={filteredRestaurants}
           selectedId={selectedId}
-          onSelect={(id: number) => {
+          onSelect={(id: number) => {                          // ✅ 타입 명시
             setSelectedId(id);
             setIsSidebarOpen(true);
             const selected = restaurants.find((r) => r.id === id);
@@ -129,7 +129,7 @@ const RestaurantPage = () => {
               setFetchLocation({ lat: selected.lat, lng: selected.lng });
             }
           }}
-          onCenterChange={(newCenter: { lat: number; lng: number }) => {
+          onCenterChange={(newCenter: { lat: number; lng: number }) => {  // ✅ 타입 명시
             if (!isSearching) setFetchLocation(newCenter);
           }}
           center={mapCenter}
