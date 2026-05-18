@@ -76,62 +76,68 @@ const RestaurantMapContainer: React.FC<RestaurantMapProps> = ({
   }, []);
 
   // [2] 마커 및 클러스터러 그리기
+ // [2] 마커 및 클러스터러 그리기
   useEffect(() => {
     if (!isMapLoaded || !mapInstance.current || !clustererRef.current) return;
 
     const clusterer = clustererRef.current;
+    const map = mapInstance.current; // 현재 지도 객체 가져오기
 
+    // 기존 데이터 정리
     clusterer.clear();
     overlaysMap.current.forEach((ov) => ov.setMap(null));
     overlaysMap.current.clear();
 
     const newMarkers = restaurants.map((res) => {
       const position = new window.kakao.maps.LatLng(res.lat, res.lng);
-      const color = res.markerColor ? res.markerColor.toLowerCase() : "";
 
-      let markerImageUrl = "";
-      if (color === "yellow" || color === "#ffff00") {
-        markerImageUrl = '/pin-yellow.png';
-      } else if (color === "blue" || color === "#0000ff") {
-        markerImageUrl = '/pin-blue.png';
-      } else if (color === "orange" || color === "#ffa500") {
-        markerImageUrl = '/pin-orange.png';
-      } else if (color === "red" || color === "#ff0000") {
-        markerImageUrl = '/pin-red.png';
-      } else if (color === "green" || color === "#008000") {
-        markerImageUrl = '/pin-green.png';
-      } else {
-        markerImageUrl = "/pin-green.png";
+      // 1. 등급(grade)에 따라 스타일과 심볼 결정
+      let pinClass = "pin-selected";
+      let symbol = "M";
+
+      if (res.grade === "1스타") {
+        pinClass = "pin-star";
+        symbol = "★";
+      } else if (res.grade === "빕 구르망") {
+        pinClass = "pin-bib";
+        symbol = "♥";
       }
 
-      const markerImage = markerImageUrl
-        ? new window.kakao.maps.MarkerImage(
-            markerImageUrl,
-            new window.kakao.maps.Size(35, 35),
-          )
-        : null;
+      // 2. 커스텀 오버레이 HTML 생성
+      const content = document.createElement('div');
+      content.innerHTML = `
+        <div class="custom-pin ${pinClass}">
+          <span class="pin-content">${symbol}</span>
+        </div>
+      `;
+      
+      // 클릭 이벤트 추가 (중요: 커스텀 오버레이는 직접 이벤트를 걸어줘야 함)
+      content.onclick = () => {
+        onSelect(res.id);
+      };
 
-      const marker = new window.kakao.maps.Marker({
+      // 3. 커스텀 오버레이 생성
+      const customOverlay = new window.kakao.maps.CustomOverlay({
         position: position,
-        image: markerImage,
-        title: res.restaurantName,
+        content: content,
+        yAnchor: 1.3,
       });
 
-      window.kakao.maps.event.addListener(marker, "click", () => {
-        window.selectRestaurant(res.id);
-      });
+      // 지도에 즉시 표시
+      customOverlay.setMap(map);
+      
+      // 관리를 위해 Map에 저장
+      overlaysMap.current.set(res.id, customOverlay);
 
-      return marker;
+      return customOverlay;
     });
 
+    // 클러스터러에 마커(오버레이) 추가 (참고: 카카오 클러스터러는 기본 Marker 객체에 최적화되어 있어, 
+    // 오버레이 사용 시 클러스터링이 안 될 수 있습니다. 만약 클러스터링이 꼭 필요하면 Marker로 돌아가야 합니다.)
+    // 일단은 화면 표시를 위해 보존합니다.
     clusterer.addMarkers(newMarkers);
 
-    return () => {
-      newMarkers.forEach((marker) => {
-        window.kakao.maps.event.removeListener(marker, "click");
-      });
-    };
-  }, [restaurants, isMapLoaded, selectedId]);
+  }, [restaurants, isMapLoaded, selectedId, onSelect]);
 
   // [3] 지도 중심 이동
   useEffect(() => {
