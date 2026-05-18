@@ -3,7 +3,7 @@ import RestaurantMapContainer from "../components/restaurant/RestaurantMapContai
 import { useNavigate } from "react-router-dom";
 import { getRestaurantMarkers, searchRestaurantsByName } from "../service/restaurantApi";
 // ✅ interface 제거 → IRestaurantMarker import
-import { IRestaurantMarker } from "../types/IRestaurant";
+import type { IRestaurantMarker } from "../types/IRestaurant";
 
 const RestaurantPage = () => {
   // ✅ Restaurant[] → IRestaurantMarker[]
