@@ -31,6 +31,14 @@ const RestaurantPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
 
+  // ✅ 지도 페이지 진입 시 body 스크롤 제거 → 우측 스크롤바 사라짐
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   const filteredRestaurants = restaurants.filter((res) => {
     const normalizedName = res.restaurantName.replace(/\s+/g, "").toLowerCase();
     const normalizedSearch = searchTerm.replace(/\s+/g, "").toLowerCase();
