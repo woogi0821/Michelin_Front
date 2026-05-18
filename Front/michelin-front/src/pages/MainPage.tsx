@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/useAuthStore'
 import { getRestaurantList } from '../service/restaurantApi'
+// ✅ 경로 수정 (../../ → ../) + IRestaurant → IRestaurantSummary
+import type { IRestaurantSummary } from '../types/IRestaurant'
 
 const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1582450871972-ed5ca60b6f3d?w=800',
@@ -14,14 +16,6 @@ const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800',
 ]
 
-interface Restaurant {
-  id: number
-  restaurantName: string
-  grade: string
-  district: string
-  mainImageUrl: string | null
-}
-
 const gradeLabel = (grade: string) => {
   if (grade === '1스타') return '★ 1 STAR'
   if (grade === '빕 구르망') return 'BIB GOURMAND'
@@ -33,7 +27,8 @@ function MainPage() {
   const [step, setStep] = useState<'intro' | 'unlocking' | 'unlocked'>(
     () => introUnlocked ? 'unlocked' : 'intro'
   )
-  const [featured, setFeatured] = useState<Restaurant[]>([])
+  // ✅ IRestaurantSummary[] 로 통일
+  const [featured, setFeatured] = useState<IRestaurantSummary[]>([])
   const navigate = useNavigate()
   const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
@@ -77,7 +72,8 @@ function MainPage() {
     return () => observer.disconnect()
   }, [step, featured])
 
-  const getImage = (restaurant: Restaurant, index: number) => {
+  // ✅ IRestaurantSummary 타입 사용
+  const getImage = (restaurant: IRestaurantSummary, index: number) => {
     return restaurant.mainImageUrl || FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]
   }
 
@@ -137,14 +133,8 @@ function MainPage() {
       {/* ── 메인 콘텐츠 ──────────────────────────────────────────────── */}
       {step === 'unlocked' && (
         <>
-          {/* ── 히어로 헤더 ────────────────────────────────────────────
-              모바일  : 텍스트 → 이미지 세로 스택
-              lg 이상 : 텍스트(좌) + 이미지(우) 2컬럼
-          ─────────────────────────────────────────────────────────── */}
           <header className="px-[5vw] pt-[60px] pb-[60px]">
             <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-end">
-
-              {/* 텍스트 */}
               <div className="flex flex-col justify-end lg:h-[60vh]">
                 <h1
                   style={{
@@ -167,21 +157,14 @@ function MainPage() {
                 </p>
               </div>
 
-              {/* 히어로 이미지
-                  모바일  : 전체 너비, 높이 50vw (너무 크지 않게)
-                  lg 이상 : 오른쪽 정렬 85%, 높이 60vh
-              */}
               <div className="w-full lg:w-[85%] lg:justify-self-end">
                 <div className="w-full overflow-hidden h-[50vw] sm:h-[40vw] lg:h-[60vh]">
                   <img
                     src="https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1200"
                     alt="Main Hero"
                     style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      filter: 'grayscale(1)',
-                      transform: 'scale(1.1)',
+                      width: '100%', height: '100%', objectFit: 'cover',
+                      filter: 'grayscale(1)', transform: 'scale(1.1)',
                       transition: '2.5s cubic-bezier(0.19, 1, 0.22, 1)'
                     }}
                     onMouseEnter={e => {
@@ -198,22 +181,14 @@ function MainPage() {
             </div>
           </header>
 
-          {/* ── FEATURED 섹션 ───────────────────────────────────────────
-              모바일  : 1컬럼
-              sm      : 2컬럼
-              lg      : 4컬럼
-          ─────────────────────────────────────────────────────────── */}
           <section className="px-[5vw] py-16 sm:py-20 lg:py-[120px]">
-
-            {/* 헤더 */}
             <div className="flex justify-between items-center mb-10 sm:mb-[60px]">
               <h2
                 style={{
                   fontFamily: "'Playfair Display', serif",
                   fontWeight: 700,
                   fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
-                  margin: 0,
-                  color: '#111'
+                  margin: 0, color: '#111'
                 }}
               >
                 FEATURED
@@ -262,10 +237,7 @@ function MainPage() {
                         e.currentTarget.style.opacity = '0.7'
                       }}
                     />
-                    {/* 그라데이션 오버레이 */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-
-                    {/* 카드 하단 텍스트 */}
                     <div className="absolute bottom-[14px] left-[14px] text-white">
                       <div
                         className="text-[8px] tracking-[1.5px] border border-[#e62117] text-[#e62117]

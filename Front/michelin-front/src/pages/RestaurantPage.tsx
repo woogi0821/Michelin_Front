@@ -1,26 +1,16 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import RestaurantMapContainer from "../components/restaurant/RestaurantMapContainer";
 import { useNavigate } from "react-router-dom";
-
-interface Restaurant {
-  id: number;
-  restaurantName: string;
-  lat: number;
-  lng: number;
-  grade: string;
-  markerColor: string;
-  category: string;
-  address?: string;
-  phone?: string;
-  imageUrl?: string;
-}
+import { getRestaurantMarkers, searchRestaurantsByName } from "../service/restaurantApi";
+// ✅ interface 제거 → IRestaurantMarker import
+import { IRestaurantMarker } from "../types/IRestaurant";
 
 const RestaurantPage = () => {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  // ✅ Restaurant[] → IRestaurantMarker[]
+  const [restaurants, setRestaurants] = useState<IRestaurantMarker[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [suggestions, setSuggestions] = useState<Restaurant[]>([]);
+  const [suggestions, setSuggestions] = useState<IRestaurantMarker[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [mapCenter, setMapCenter] = useState({ lat: 35.1795, lng: 129.0756 });
@@ -31,7 +21,6 @@ const RestaurantPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ 지도 페이지 진입 시 body 스크롤 제거 → 우측 스크롤바 사라짐
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
@@ -47,6 +36,7 @@ const RestaurantPage = () => {
     return isNameMatch && isCategoryMatch;
   });
 
+  // ✅ Restaurant | undefined → IRestaurantMarker | undefined
   const selectedRestaurant = restaurants.find((r) => r.id === selectedId);
 
   useEffect(() => {
@@ -63,10 +53,7 @@ const RestaurantPage = () => {
 
   useEffect(() => {
     if (!isSearching) {
-      axios
-        .get("http://localhost:8080/api/restaurants/markers", {
-          params: { lat: fetchLocation.lat, lng: fetchLocation.lng },
-        })
+      getRestaurantMarkers(fetchLocation.lat, fetchLocation.lng)
         .then((response) => {
           setRestaurants(response.data);
         });
@@ -95,9 +82,7 @@ const RestaurantPage = () => {
     }
     try {
       setIsSearching(true);
-      const response = await axios.get("http://localhost:8080/api/restaurants/search", {
-        params: { name: query },
-      });
+      const response = await searchRestaurantsByName(query);
       setRestaurants(response.data);
       setShowSuggestions(false);
     } catch (error) {
@@ -115,12 +100,12 @@ const RestaurantPage = () => {
   };
 
   return (
-    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
+    <div style={{ position: "relative", width: "100%", height: "100vh", overflow: "hidden" }}>
       <div style={{ width: "100%", height: "100%", zIndex: 1 }}>
         <RestaurantMapContainer
           restaurants={filteredRestaurants}
           selectedId={selectedId}
-          onSelect={(id: number) => {                          // ✅ 타입 명시
+          onSelect={(id: number) => {
             setSelectedId(id);
             setIsSidebarOpen(true);
             const selected = restaurants.find((r) => r.id === id);
@@ -129,7 +114,7 @@ const RestaurantPage = () => {
               setFetchLocation({ lat: selected.lat, lng: selected.lng });
             }
           }}
-          onCenterChange={(newCenter: { lat: number; lng: number }) => {  // ✅ 타입 명시
+          onCenterChange={(newCenter: { lat: number; lng: number }) => {
             if (!isSearching) setFetchLocation(newCenter);
           }}
           center={mapCenter}
@@ -139,18 +124,11 @@ const RestaurantPage = () => {
 
       <div
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "400px",
-          height: "100%",
-          backgroundColor: "white",
-          zIndex: 100,
+          position: "absolute", top: 0, left: 0, width: "400px", height: "100%",
+          backgroundColor: "white", zIndex: 100,
           boxShadow: "5px 0 15px rgba(0,0,0,0.1)",
           transform: isSidebarOpen ? "translateX(0)" : "translateX(-400px)",
-          transition: "transform 0.3s ease",
-          display: "flex",
-          flexDirection: "column",
+          transition: "transform 0.3s ease", display: "flex", flexDirection: "column",
         }}
       >
         <div style={{ padding: "20px", borderBottom: "1px solid #eee" }}>
@@ -292,12 +270,7 @@ const RestaurantPage = () => {
                   >
                     <div style={{ fontWeight: "bold" }}>{res.restaurantName}</div>
                     <div style={{ fontSize: "0.8rem", marginTop: "5px", display: "flex", alignItems: "center", gap: "5px" }}>
-                      <span
-                        style={{
-                          color: res.markerColor.toLowerCase() === "yellow" ? "#b8860b" : res.markerColor,
-                          fontWeight: "bold",
-                        }}
-                      >
+                      <span style={{ color: res.markerColor.toLowerCase() === "yellow" ? "#b8860b" : res.markerColor, fontWeight: "bold" }}>
                         {res.grade}
                       </span>
                       <span style={{ color: "#ddd" }}>|</span>

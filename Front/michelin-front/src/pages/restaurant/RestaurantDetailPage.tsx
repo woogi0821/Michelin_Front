@@ -5,22 +5,8 @@ import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 import { BsBookmarkFill, BsBookmark } from "react-icons/bs";
 import axios from "axios";
 import Modal from '../../components/common/Modal';
-
-interface Restaurant {
-  id: number;
-  restaurantName: string;
-  grade: string;
-  city: string;
-  district: string;
-  address: string;
-  phone: string;
-  isGreenStar: string;
-  viewCount: number;
-  mainImageUrl: string | null;
-  lat: number;
-  lng: number;
-  kakaoPlaceUrl: string;
-}
+// ✅ interface 제거 → IRestaurant import
+import type { IRestaurant } from '../../types/IRestaurant'
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800";
 
@@ -95,7 +81,8 @@ function DetailPageSkeleton() {
 function RestaurantDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  // ✅ Restaurant → IRestaurant
+  const [restaurant, setRestaurant] = useState<IRestaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -109,7 +96,6 @@ function RestaurantDetailPage() {
     }
   }, [id, memberId]);
 
-  // 브라우저 탭 제목 설정 (식당 이름으로 변경)
   useEffect(() => {
     if (restaurant) {
       document.title = `${restaurant.restaurantName} | MICHELIN`;
@@ -160,24 +146,22 @@ function RestaurantDetailPage() {
   };
 
   const handleBookmark = async () => {
-  if (!checkLogin()) return;
-  
-  try {
-    const res = await axios.post(`http://localhost:8080/api/social/bookmark`, {
-      memberId: Number(memberId),
-      restaurantId: Number(id)
-    });
-    setIsBookmarked(res.data);
-  } catch (e: any) {
-    // 만약 부모 키가 없어서 에러가 난 경우 (500 에러 등)
-    if (e.response && e.response.status === 500) {
-      alert("세션 정보가 만료되었거나 잘못된 사용자 정보입니다. 다시 로그인해주세요.");
-      localStorage.removeItem("memberId"); // 잘못된 ID 삭제
-      navigate("/login"); // 로그인 페이지로 강제 이동
+    if (!checkLogin()) return;
+    try {
+      const res = await axios.post(`http://localhost:8080/api/social/bookmark`, {
+        memberId: Number(memberId),
+        restaurantId: Number(id)
+      });
+      setIsBookmarked(res.data);
+    } catch (e: any) {
+      if (e.response && e.response.status === 500) {
+        alert("세션 정보가 만료되었거나 잘못된 사용자 정보입니다. 다시 로그인해주세요.");
+        localStorage.removeItem("memberId");
+        navigate("/login");
+      }
+      console.error(e);
     }
-    console.error(e);
-  }
-};
+  };
 
   const openKakaoMap = () => {
     if (restaurant?.kakaoPlaceUrl) {
@@ -253,7 +237,6 @@ function RestaurantDetailPage() {
               </div>
             ))}
           </section>
-          {/* ... 지도 및 리뷰 섹션 (생략 가능) ... */}
         </div>
 
         {/* 사이드바 */}

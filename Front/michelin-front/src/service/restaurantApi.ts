@@ -42,3 +42,8 @@ export const getSearchAutocomplete = (keyword: string) => {
 export const getRestaurantMarkers = (lat: number, lng: number) => {
   return api.get('/restaurants/markers', { params: { lat, lng } })
 }
+
+// ✅ 이름 검색 (P4 연동)
+export const searchRestaurantsByName = (name: string) => {
+  return api.get('/restaurants/search', { params: { name } })
+}

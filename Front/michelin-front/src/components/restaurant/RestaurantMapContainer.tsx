@@ -1,19 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
+// ✅ interface 제거 → IRestaurantMarker import
+import type { IRestaurantMarker } from "../../types/IRestaurant";
 
-interface Restaurant {
-  id: number;
-  restaurantName: string;
-  lat: number;
-  lng: number;
-  grade: string;
-  markerColor: string;
-  address?: string;
-  phone?: string;
-  imageUrl?: string;
-}
-
+// ✅ RestaurantMapProps의 restaurants 타입을 IRestaurantMarker[]로 교체
 interface RestaurantMapProps {
-  restaurants: Restaurant[];
+  restaurants: IRestaurantMarker[];
   selectedId: number | null;
   onSelect: (id: number) => void;
   onCenterChange: (coords: { lat: number; lng: number }) => void;
@@ -42,7 +33,6 @@ const RestaurantMapContainer: React.FC<RestaurantMapProps> = ({
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [mapLevel, setMapLevel] = useState(5);
 
-  // 💡 가비지 컬렉션 및 깜빡임 방지를 위한 캐싱 Map 객체 구조 유지
   const customOverlaysMap = useRef<Map<number, { overlay: any; element: HTMLElement }>>(new Map());
   const kakaoMarkersMap = useRef<Map<number, any>>(new Map());
 
@@ -71,7 +61,6 @@ const RestaurantMapContainer: React.FC<RestaurantMapProps> = ({
           disableClickZoom: true,
         });
 
-        // 지도 드래그 종료 시 이벤트 내부 디바운스나 스로틀 처리가 백엔드에 있으면 좋습니다.
         window.kakao.maps.event.addListener(map, "dragend", () => {
           const latlng = map.getCenter();
           onCenterChange({ lat: latlng.getLat(), lng: latlng.getLng() });
@@ -86,7 +75,7 @@ const RestaurantMapContainer: React.FC<RestaurantMapProps> = ({
     };
   }, []);
 
-  // [2] 마커 및 클러스터러 그리기 (✨ 깜빡임 및 제멋대로 작동 방지 대규모 수정 파트)
+  // [2] 마커 및 클러스터러 그리기
   useEffect(() => {
     const map = mapInstance.current;
     if (!isMapLoaded || !map || !clustererRef.current) return;
@@ -96,19 +85,16 @@ const RestaurantMapContainer: React.FC<RestaurantMapProps> = ({
       new window.kakao.maps.Size(1, 1)
     );
 
-    // 현재 백엔드로부터 새로 들어온 식당들의 ID 셋 빌드
     const incomingIds = new Set(restaurants.map((r) => r.id));
 
-    // 🔴 1. 기존에 그려둔 오버레이/마커 중 '이번 백엔드 응답에서 사라진 식당'들만 골라내서 부드럽게 숨김 처리
     customOverlaysMap.current.forEach((obj, id) => {
       if (!incomingIds.has(id)) {
-        obj.overlay.setMap(null); // 이번 범위에 없는 식당은 지도에서 off
+        obj.overlay.setMap(null);
       }
     });
 
     const markersToCluster: any[] = [];
 
-    // 🟢 2. 현재 화면에 표출되어야 하는 식당 루프 순회
     restaurants.forEach((res) => {
       let markerObj = customOverlaysMap.current.get(res.id);
 
@@ -117,7 +103,7 @@ const RestaurantMapContainer: React.FC<RestaurantMapProps> = ({
         container.style.cursor = "pointer";
         container.onclick = () => window.selectRestaurant(res.id);
 
-container.innerHTML = `
+        container.innerHTML = `
   <div class="marker-wrapper" style="display:flex; flex-direction:column; align-items:center; transition: transform 0.2s;">
     <div style="width:30px; height:36px; position:relative;">
       <svg class="marker-svg" viewBox="0 0 24 24" style="width:30px; height:36px;">
@@ -138,18 +124,17 @@ container.innerHTML = `
         customOverlaysMap.current.set(res.id, markerObj);
       }
 
-      // 위치 갱신
       markerObj.overlay.setPosition(new window.kakao.maps.LatLng(res.lat, res.lng));
 
       const isSelected = selectedId === res.id;
 
       const michelinColors: Record<string, string> = {
-        "선정 레스토랑": "#2563EB", 
-        "선정레스토랑": "#2563EB",   
-        "빕 구르망": "#22C55E",     
-        "1스타": "#DAA520",         
-        "2스타": "#DAA520",         
-        "3스타": "#DAA520",         
+        "선정 레스토랑": "#2563EB",
+        "선정레스토랑": "#2563EB",
+        "빕 구르망": "#22C55E",
+        "1스타": "#DAA520",
+        "2스타": "#DAA520",
+        "3스타": "#DAA520",
       };
 
       const targetColor = michelinColors[res.grade] || "#94A3B8";
@@ -161,21 +146,19 @@ container.innerHTML = `
       wrapper.style.transform = isSelected ? "scale(1.3) translateY(-7px)" : "scale(1)";
       path.setAttribute("fill", targetColor);
       label.textContent = res.restaurantName;
-      
+
       label.style.background = isSelected ? targetColor : "rgba(255,255,255,0.9)";
       label.style.color = isSelected ? "white" : "#333";
       label.style.borderColor = targetColor;
 
-      // 6레벨 이상 축소 시 커스텀 디자인을 숨겨 클러스터 숫자와 겹치지 않게 방어
       if (mapLevel >= 6) {
         markerObj.overlay.setMap(null);
       } else {
-        markerObj.overlay.setMap(map); // 화면 범위 안에 들어와있고 5레벨 이하면 노출
+        markerObj.overlay.setMap(map);
       }
 
       markerObj.overlay.setZIndex(isSelected ? 100 : 1);
 
-      // 클러스터 등록용 투명 백그라운드 카카오 마커 관리
       let kakaoMarker = kakaoMarkersMap.current.get(res.id);
       if (!kakaoMarker) {
         kakaoMarker = new window.kakao.maps.Marker({
@@ -190,14 +173,12 @@ container.innerHTML = `
       markersToCluster.push(kakaoMarker);
     });
 
-    // 🔴 3. 카카오 마커 맵에서도 현재 없는 마커 객체 정리
     kakaoMarkersMap.current.forEach((_, id) => {
       if (!incomingIds.has(id)) {
         kakaoMarkersMap.current.delete(id);
       }
     });
 
-    // 클러스터 집합 동기화 및 가상 마커 재연산
     clustererRef.current.clear();
     if (markersToCluster.length > 0) {
       clustererRef.current.addMarkers(markersToCluster);

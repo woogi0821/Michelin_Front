@@ -1,22 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getRestaurantList } from '../../service/restaurantApi'
-
-interface Restaurant {
-  id: number
-  restaurantName: string
-  grade: string
-  city: string
-  district: string
-  address: string
-  phone: string
-  isGreenStar: string
-  viewCount: number
-  mainImageUrl: string | null
-  lat: number
-  lng: number
-  kakaoPlaceUrl: string
-}
+// ✅ interface 제거 → IRestaurant import
+import type { IRestaurant } from '../../types/IRestaurant'
 
 const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1582450871972-ed5ca60b6f3d?w=600',
@@ -35,7 +21,8 @@ const gradeLabel = (grade: string) => {
   return 'SELECTED'
 }
 
-const getImage = (restaurant: Restaurant, index: number) =>
+// ✅ Restaurant → IRestaurant
+const getImage = (restaurant: IRestaurant, index: number) =>
   restaurant.mainImageUrl || FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]
 
 const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>, index: number) => {
@@ -94,7 +81,8 @@ function ListPageSkeleton({ isMobile }: { isMobile: boolean }) {
 function RestaurantListPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([])
+  // ✅ Restaurant[] → IRestaurant[]
+  const [restaurants, setRestaurants] = useState<IRestaurant[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
@@ -146,7 +134,6 @@ function RestaurantListPage() {
   const featured = restaurants.slice(0, 3)
   const rest = restaurants.slice(3)
 
-  // 페이지 그룹 계산
   const pageCount = isMobile ? 3 : 5
   const pageGroupStart = Math.floor(page / pageCount) * pageCount
   const pageNumbers = Array.from(
@@ -160,7 +147,6 @@ function RestaurantListPage() {
 
       <div style={{ fontFamily: "'Space Mono', monospace", background: '#fdfdfd', minHeight: '100vh', padding: '2rem 5vw' }}>
 
-        {/* 키워드 검색 배너 */}
         {keyword && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#111', marginBottom: '1rem' }}>
             <div style={{ fontSize: '10px', letterSpacing: '2px', color: '#fff' }}>
@@ -173,7 +159,6 @@ function RestaurantListPage() {
           </div>
         )}
 
-        {/* 필터바 */}
         <div style={{ display: 'flex', gap: '6px', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ fontSize: '10px', color: '#aaa', letterSpacing: '2px', marginRight: '4px' }}>GRADE</span>
           {['', '1스타', '빕 구르망', '선정 레스토랑'].map((g, i) => (
@@ -204,7 +189,6 @@ function RestaurantListPage() {
           </div>
         )}
 
-        {/* 검색 결과 없을 때 */}
         {!loading && restaurants.length === 0 && (
           <div style={{ textAlign: 'center', padding: '4rem' }}>
             <div style={{ fontSize: '11px', letterSpacing: '3px', color: '#aaa', marginBottom: '1rem' }}>NO RESULTS</div>
@@ -263,50 +247,16 @@ function RestaurantListPage() {
               </div>
             )}
 
-            {/* 페이지네이션 */}
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px', marginTop: '3rem' }}>
-              {/* 첫 페이지 */}
-              <button
-                onClick={() => setPage(0)}
-                disabled={page === 0}
-                style={{ width: '28px', height: '28px', border: '0.5px solid #ddd', background: 'transparent', color: page === 0 ? '#ddd' : '#888', cursor: page === 0 ? 'default' : 'pointer', fontSize: '11px' }}
-              >«</button>
-              {/* 이전 */}
-              <button
-                onClick={() => setPage(p => Math.max(0, p - 1))}
-                disabled={page === 0}
-                style={{ width: '28px', height: '28px', border: '0.5px solid #ddd', background: 'transparent', color: page === 0 ? '#ddd' : '#888', cursor: page === 0 ? 'default' : 'pointer', fontSize: '12px' }}
-              >‹</button>
-
-              {/* 페이지 번호 */}
+              <button onClick={() => setPage(0)} disabled={page === 0} style={{ width: '28px', height: '28px', border: '0.5px solid #ddd', background: 'transparent', color: page === 0 ? '#ddd' : '#888', cursor: page === 0 ? 'default' : 'pointer', fontSize: '11px' }}>«</button>
+              <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} style={{ width: '28px', height: '28px', border: '0.5px solid #ddd', background: 'transparent', color: page === 0 ? '#ddd' : '#888', cursor: page === 0 ? 'default' : 'pointer', fontSize: '12px' }}>‹</button>
               {pageNumbers.map(i => (
-                <button
-                  key={i}
-                  onClick={() => setPage(i)}
-                  style={{
-                    width: '28px', height: '28px',
-                    border: `0.5px solid ${page === i ? '#111' : '#ddd'}`,
-                    background: page === i ? '#111' : 'transparent',
-                    color: page === i ? '#fff' : '#888',
-                    cursor: 'pointer', fontSize: '11px'
-                  }}
-                >
+                <button key={i} onClick={() => setPage(i)} style={{ width: '28px', height: '28px', border: `0.5px solid ${page === i ? '#111' : '#ddd'}`, background: page === i ? '#111' : 'transparent', color: page === i ? '#fff' : '#888', cursor: 'pointer', fontSize: '11px' }}>
                   {i + 1}
                 </button>
               ))}
-
-              {/* 다음 */}
-              <button
-                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                disabled={page === totalPages - 1}
-                style={{ width: '28px', height: '28px', border: '0.5px solid #ddd', background: 'transparent', color: page === totalPages - 1 ? '#ddd' : '#888', cursor: page === totalPages - 1 ? 'default' : 'pointer', fontSize: '12px' }}
-              >›</button>
-              {/* 마지막 페이지 */}
-              <button
-                onClick={() => setPage(totalPages - 1)}
-                disabled={page === totalPages - 1}
-                style={{ width: '28px', height: '28px', border: '0.5px solid #ddd', background: 'transparent', color: page === totalPages - 1 ? '#ddd' : '#888', cursor: page === totalPages - 1 ? 'default' : 'pointer', fontSize: '11px' }}
-              >»</button>
+              <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1} style={{ width: '28px', height: '28px', border: '0.5px solid #ddd', background: 'transparent', color: page === totalPages - 1 ? '#ddd' : '#888', cursor: page === totalPages - 1 ? 'default' : 'pointer', fontSize: '12px' }}>›</button>
+              <button onClick={() => setPage(totalPages - 1)} disabled={page === totalPages - 1} style={{ width: '28px', height: '28px', border: '0.5px solid #ddd', background: 'transparent', color: page === totalPages - 1 ? '#ddd' : '#888', cursor: page === totalPages - 1 ? 'default' : 'pointer', fontSize: '11px' }}>»</button>
             </div>
           </>
         )}
