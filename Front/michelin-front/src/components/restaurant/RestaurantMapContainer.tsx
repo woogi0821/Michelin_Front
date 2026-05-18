@@ -40,7 +40,11 @@ const RestaurantMapContainer: React.FC<RestaurantMapProps> = ({
   const mapInstance = useRef<any>(null);
   const clustererRef = useRef<any>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const overlaysMap = useRef<Map<number, any>>(new Map());
+  const [mapLevel, setMapLevel] = useState(5);
+
+  // 💡 가비지 컬렉션 및 깜빡임 방지를 위한 캐싱 Map 객체 구조 유지
+  const customOverlaysMap = useRef<Map<number, { overlay: any; element: HTMLElement }>>(new Map());
+  const kakaoMarkersMap = useRef<Map<number, any>>(new Map());
 
   // [1] 지도 초기화
   useEffect(() => {
@@ -63,11 +67,18 @@ const RestaurantMapContainer: React.FC<RestaurantMapProps> = ({
           map: map,
           averageCenter: true,
           minLevel: 6,
+          gridSize: 60,
+          disableClickZoom: true,
         });
 
+        // 지도 드래그 종료 시 이벤트 내부 디바운스나 스로틀 처리가 백엔드에 있으면 좋습니다.
         window.kakao.maps.event.addListener(map, "dragend", () => {
           const latlng = map.getCenter();
           onCenterChange({ lat: latlng.getLat(), lng: latlng.getLng() });
+        });
+
+        window.kakao.maps.event.addListener(map, "zoom_changed", () => {
+          setMapLevel(map.getLevel());
         });
 
         setIsMapLoaded(true);
@@ -75,69 +86,123 @@ const RestaurantMapContainer: React.FC<RestaurantMapProps> = ({
     };
   }, []);
 
-  // [2] 마커 및 클러스터러 그리기
- // [2] 마커 및 클러스터러 그리기
+  // [2] 마커 및 클러스터러 그리기 (✨ 깜빡임 및 제멋대로 작동 방지 대규모 수정 파트)
   useEffect(() => {
-    if (!isMapLoaded || !mapInstance.current || !clustererRef.current) return;
+    const map = mapInstance.current;
+    if (!isMapLoaded || !map || !clustererRef.current) return;
 
-    const clusterer = clustererRef.current;
-    const map = mapInstance.current; // 현재 지도 객체 가져오기
+    const transparentImage = new window.kakao.maps.MarkerImage(
+      "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      new window.kakao.maps.Size(1, 1)
+    );
 
-    // 기존 데이터 정리
-    clusterer.clear();
-    overlaysMap.current.forEach((ov) => ov.setMap(null));
-    overlaysMap.current.clear();
+    // 현재 백엔드로부터 새로 들어온 식당들의 ID 셋 빌드
+    const incomingIds = new Set(restaurants.map((r) => r.id));
 
-    const newMarkers = restaurants.map((res) => {
-      const position = new window.kakao.maps.LatLng(res.lat, res.lng);
-
-      // 1. 등급(grade)에 따라 스타일과 심볼 결정
-      let pinClass = "pin-selected";
-      let symbol = "M";
-
-      if (res.grade === "1스타") {
-        pinClass = "pin-star";
-        symbol = "★";
-      } else if (res.grade === "빕 구르망") {
-        pinClass = "pin-bib";
-        symbol = "♥";
+    // 🔴 1. 기존에 그려둔 오버레이/마커 중 '이번 백엔드 응답에서 사라진 식당'들만 골라내서 부드럽게 숨김 처리
+    customOverlaysMap.current.forEach((obj, id) => {
+      if (!incomingIds.has(id)) {
+        obj.overlay.setMap(null); // 이번 범위에 없는 식당은 지도에서 off
       }
-
-      // 2. 커스텀 오버레이 HTML 생성
-      const content = document.createElement('div');
-      content.innerHTML = `
-        <div class="custom-pin ${pinClass}">
-          <span class="pin-content">${symbol}</span>
-        </div>
-      `;
-      
-      // 클릭 이벤트 추가 (중요: 커스텀 오버레이는 직접 이벤트를 걸어줘야 함)
-      content.onclick = () => {
-        onSelect(res.id);
-      };
-
-      // 3. 커스텀 오버레이 생성
-      const customOverlay = new window.kakao.maps.CustomOverlay({
-        position: position,
-        content: content,
-        yAnchor: 1.3,
-      });
-
-      // 지도에 즉시 표시
-      customOverlay.setMap(map);
-      
-      // 관리를 위해 Map에 저장
-      overlaysMap.current.set(res.id, customOverlay);
-
-      return customOverlay;
     });
 
-    // 클러스터러에 마커(오버레이) 추가 (참고: 카카오 클러스터러는 기본 Marker 객체에 최적화되어 있어, 
-    // 오버레이 사용 시 클러스터링이 안 될 수 있습니다. 만약 클러스터링이 꼭 필요하면 Marker로 돌아가야 합니다.)
-    // 일단은 화면 표시를 위해 보존합니다.
-    clusterer.addMarkers(newMarkers);
+    const markersToCluster: any[] = [];
 
-  }, [restaurants, isMapLoaded, selectedId, onSelect]);
+    // 🟢 2. 현재 화면에 표출되어야 하는 식당 루프 순회
+    restaurants.forEach((res) => {
+      let markerObj = customOverlaysMap.current.get(res.id);
+
+      if (!markerObj) {
+        const container = document.createElement("div");
+        container.style.cursor = "pointer";
+        container.onclick = () => window.selectRestaurant(res.id);
+
+container.innerHTML = `
+  <div class="marker-wrapper" style="display:flex; flex-direction:column; align-items:center; transition: transform 0.2s;">
+    <div style="width:30px; height:36px; position:relative;">
+      <svg class="marker-svg" viewBox="0 0 24 24" style="width:30px; height:36px;">
+        <path class="marker-path" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+        <circle cx="12" cy="9" r="3" fill="white"/>
+      </svg>
+    </div>
+    <div class="occupancy-label" style="display: none; margin-top:4px; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:bold; white-space:nowrap; border:1px solid transparent;"></div>
+  </div>`;
+
+        const overlay = new window.kakao.maps.CustomOverlay({
+          position: new window.kakao.maps.LatLng(res.lat, res.lng),
+          content: container,
+          yAnchor: 0.9,
+        });
+
+        markerObj = { overlay, element: container };
+        customOverlaysMap.current.set(res.id, markerObj);
+      }
+
+      // 위치 갱신
+      markerObj.overlay.setPosition(new window.kakao.maps.LatLng(res.lat, res.lng));
+
+      const isSelected = selectedId === res.id;
+
+      const michelinColors: Record<string, string> = {
+        "선정 레스토랑": "#2563EB", 
+        "선정레스토랑": "#2563EB",   
+        "빕 구르망": "#22C55E",     
+        "1스타": "#DAA520",         
+        "2스타": "#DAA520",         
+        "3스타": "#DAA520",         
+      };
+
+      const targetColor = michelinColors[res.grade] || "#94A3B8";
+
+      const wrapper = markerObj.element.querySelector(".marker-wrapper") as HTMLElement;
+      const path = markerObj.element.querySelector(".marker-path") as HTMLElement;
+      const label = markerObj.element.querySelector(".occupancy-label") as HTMLElement;
+
+      wrapper.style.transform = isSelected ? "scale(1.3) translateY(-7px)" : "scale(1)";
+      path.setAttribute("fill", targetColor);
+      label.textContent = res.restaurantName;
+      
+      label.style.background = isSelected ? targetColor : "rgba(255,255,255,0.9)";
+      label.style.color = isSelected ? "white" : "#333";
+      label.style.borderColor = targetColor;
+
+      // 6레벨 이상 축소 시 커스텀 디자인을 숨겨 클러스터 숫자와 겹치지 않게 방어
+      if (mapLevel >= 6) {
+        markerObj.overlay.setMap(null);
+      } else {
+        markerObj.overlay.setMap(map); // 화면 범위 안에 들어와있고 5레벨 이하면 노출
+      }
+
+      markerObj.overlay.setZIndex(isSelected ? 100 : 1);
+
+      // 클러스터 등록용 투명 백그라운드 카카오 마커 관리
+      let kakaoMarker = kakaoMarkersMap.current.get(res.id);
+      if (!kakaoMarker) {
+        kakaoMarker = new window.kakao.maps.Marker({
+          position: new window.kakao.maps.LatLng(res.lat, res.lng),
+          image: transparentImage,
+        });
+        window.kakao.maps.event.addListener(kakaoMarker, "click", () => onSelect(res.id));
+        kakaoMarkersMap.current.set(res.id, kakaoMarker);
+      } else {
+        kakaoMarker.setPosition(new window.kakao.maps.LatLng(res.lat, res.lng));
+      }
+      markersToCluster.push(kakaoMarker);
+    });
+
+    // 🔴 3. 카카오 마커 맵에서도 현재 없는 마커 객체 정리
+    kakaoMarkersMap.current.forEach((_, id) => {
+      if (!incomingIds.has(id)) {
+        kakaoMarkersMap.current.delete(id);
+      }
+    });
+
+    // 클러스터 집합 동기화 및 가상 마커 재연산
+    clustererRef.current.clear();
+    if (markersToCluster.length > 0) {
+      clustererRef.current.addMarkers(markersToCluster);
+    }
+  }, [restaurants, isMapLoaded, selectedId, mapLevel, onSelect]);
 
   // [3] 지도 중심 이동
   useEffect(() => {
@@ -147,10 +212,7 @@ const RestaurantMapContainer: React.FC<RestaurantMapProps> = ({
     if (selectedId) {
       const selectedRes = restaurants.find((r) => r.id === selectedId);
       if (selectedRes) {
-        const moveLatLon = new window.kakao.maps.LatLng(
-          selectedRes.lat,
-          selectedRes.lng,
-        );
+        const moveLatLon = new window.kakao.maps.LatLng(selectedRes.lat, selectedRes.lng);
         map.panTo(moveLatLon);
         return;
       }
@@ -169,10 +231,7 @@ const RestaurantMapContainer: React.FC<RestaurantMapProps> = ({
   useEffect(() => {
     if (!isMapLoaded || !mapInstance.current || !userLocation) return;
     const map = mapInstance.current;
-    const myPos = new window.kakao.maps.LatLng(
-      userLocation.lat,
-      userLocation.lng,
-    );
+    const myPos = new window.kakao.maps.LatLng(userLocation.lat, userLocation.lng);
     map.setCenter(myPos);
     map.setLevel(4);
   }, [userLocation, isMapLoaded]);
